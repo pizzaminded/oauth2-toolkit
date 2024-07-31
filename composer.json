@@ -1,0 +1,19 @@
+{
+    "name": "p9d/oauth2-toolkit",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-0": {
+            "P9D\\OAuth2Toolkit\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "symfony/http-client": "^7.1",
+        "webmozart/assert": "^1.11"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.11",
+        "phpstan/phpstan-webmozart-assert": "^1.2"
+    }
+}
