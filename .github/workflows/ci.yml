@@ -1,0 +1,31 @@
+name: Tests & Static analysis
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: ./vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+
+      - name: Composer
+        uses: php-actions/composer@v6
+        with:
+          php_version: "8.3"
+
+      - name: PHPStan Analysis
+        run: |
+          ./vendor/bin/phpstan analyse

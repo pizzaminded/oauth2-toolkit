@@ -1,0 +1,16 @@
+parameters:
+	level: 9
+	paths:
+		- src
+	excludePaths:
+		- src/P9D/OAuth2Toolkit/PHPStan/*
+	checkImplicitMixed: true
+	typeAliases:
+	    OpenIdConfiguration: 'array{authorization_endpoint: string}'
+	    ProviderConfig: 'array{client_id: string, configuration_endpoint: non-empty-string}'
+	    ProviderConfigArray: 'array{non-empty-string: ProviderConfig}'
+services:
+	-
+		class: P9D\OAuth2Toolkit\PHPStan\OverrideAssertTypeSpecifyingExtension
+		tags:
+			- phpstan.typeSpecifier.staticMethodTypeSpecifyingExtension
