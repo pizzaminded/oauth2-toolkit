@@ -27,6 +27,9 @@ jobs:
           php-version: 8.3
           tools: composer:v2
 
+      - name: Vendors
+        run: composer install
+
       - name: PHPStan Analysis
         run: |
           ./vendor/bin/phpstan analyse
