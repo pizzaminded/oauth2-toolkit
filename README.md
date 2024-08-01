@@ -9,7 +9,7 @@ required things to integrate with them:
 
 ```php
 $providers = [
-    'keycloak' => [
+    'your-provider-name-here' => [
         'configuration_endpoint' => 'https://<url>/realms/ACME/.well-known/openid-configuration',
         'client_id' => 'XXXXXXXXXXXXX'
     ],
@@ -25,8 +25,12 @@ $factory = new \P9D\OAuth2Toolkit\OpenIdConfigurationFactory(
 
 
 # Access provider config via:
-$provider = $factory->createForProvider('keycloak');
+$provider = $factory->createForProvider('your-provider-name-here');
 ```
+
+## Provider configuration:
+- `configuration_endpoint` - URL to [OpenID Discovery Endpoint](https://openid.net/specs/openid-connect-discovery-1_0.html)
+- `?client_id` Client ID used for this provider
 
 ## Methods available in `OpenIdConfigurationService`
 
