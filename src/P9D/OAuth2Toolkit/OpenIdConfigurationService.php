@@ -18,7 +18,7 @@ readonly class OpenIdConfigurationService
     }
 
     public function getAuthorizationUrl(
-        string $grantType,
+        string $responseType,
         string $redirectUri,
         ?string $clientId = null,
         ?string $scope = null,
@@ -42,7 +42,7 @@ readonly class OpenIdConfigurationService
         parse_str($url['query'] ?? '', $queryArgs);
 
         $queryArgs['client_id'] = $clientId ?? $this->providerConfig['client_id'];
-        $queryArgs['grant_type'] = $grantType;
+        $queryArgs['response_type'] = $responseType;
         $queryArgs['redirect_uri'] = $redirectUri;
 
         if ($scope !== null) {
