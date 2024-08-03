@@ -64,4 +64,33 @@ readonly class OpenIdConfigurationService
             $url['query'],
         );
     }
+
+    public function getAccessToken(
+        string $grantType,
+        ?string $code = null,
+    )
+    {
+        $configuration = $this
+            ->httpClient
+            ->request('GET', $this->providerConfig['configuration_endpoint'])
+            ->toArray();
+
+        $tokenEndpoint = $configuration['token_endpoint'];
+
+        $body = [
+            'client_id' => $this->providerConfig['client_id'],
+            'client_secret' => $this->providerConfig['client_secret'],
+            'grant_type' => $grantType
+        ];
+
+        if ($code !== null) {
+            $body['code'] = $code;
+        }
+
+        $tokenResponse = $this->httpClient->request('POST', $tokenEndpoint, [
+            'body' => $body,
+        ]);
+
+        return $tokenResponse['access_token'];
+    }
 }
