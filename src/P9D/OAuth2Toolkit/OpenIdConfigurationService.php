@@ -89,7 +89,7 @@ readonly class OpenIdConfigurationService
 
         $tokenResponse = $this->httpClient->request('POST', $tokenEndpoint, [
             'body' => $body,
-        ]);
+        ])->toArray();
 
         return $tokenResponse['access_token'];
     }
