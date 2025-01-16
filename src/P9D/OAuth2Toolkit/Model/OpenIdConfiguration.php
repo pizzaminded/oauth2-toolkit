@@ -10,6 +10,7 @@ class OpenIdConfiguration
     public function __construct(
         private ?string $authorizationEndpoint = null,
         private ?string $tokenEndpoint = null,
+        private ?string $jwksEndpoint = null,
     )
     {
     }
@@ -40,5 +41,19 @@ class OpenIdConfiguration
         }
 
         return $this->authorizationEndpoint;
+    }
+    
+    public function getJwksEndpoint(): string
+    {
+        if($this->jwksEndpoint === null) {
+            throw new MissingOpenIdParameterException(
+                sprintf(
+                    'Parameter "%s" is missing in OpenID Configuration!',
+                    'jwks_uri'
+                )
+            );
+        }
+
+        return $this->jwksEndpoint;
     }
 }
