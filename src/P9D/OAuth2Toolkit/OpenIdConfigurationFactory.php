@@ -11,7 +11,7 @@ readonly class OpenIdConfigurationFactory
     /**
      * @param array{
      *     configuration_endpoint: string
-     * } $providers
+     * }[] $providers
      */
     public function __construct(
         private array               $providers,
