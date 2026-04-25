@@ -7,13 +7,18 @@
             "P9D\\OAuth2Toolkit\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-s": {
+            "P9D\\OAuth2Toolkit\\": "tests/"
+        }
+    },
     "require": {
         "php": "^8.4",
         "symfony/http-client": "^7|^8",
         "webmozart/assert": "^1.11"
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.11",
-        "phpstan/phpstan-webmozart-assert": "^1.2"
+        "phpstan/phpstan": "^2",
+        "phpunit/phpunit": "^13.1"
     }
 }
