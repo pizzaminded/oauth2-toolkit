@@ -1,4 +1,4 @@
-name: Tests & Static analysis
+name: PHPUnit
 
 on:
   push:
@@ -8,7 +8,12 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  tests:
+    strategy:
+      matrix:
+        php_version:
+          - 8.4
+          - 8.5
     runs-on: ubuntu-latest
 
     steps:
@@ -19,17 +24,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          key: composer-${{ runner.os }}-${{ matrix.php_version }}-${{ hashFiles('**/composer.lock') }}
 
-      - name: Install PHP 8.3
+      - name: Install PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
+          php-version: ${{ matrix.php_version }}
           tools: composer:v2
 
       - name: Vendors
         run: composer install
 
-      - name: PHPStan Analysis
+      - name: PHPUnit
         run: |
-          ./vendor/bin/phpstan analyse
+          ./vendor/bin/phpunit
