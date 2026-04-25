@@ -9,9 +9,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 readonly class OpenIdConfigurationFactory
 {
     /**
-     * @param array{
-     *     configuration_endpoint: string
-     * }[] $providers
+     * @param array<string, OpenIdConfigurationProvider> $providers
      */
     public function __construct(
         private array               $providers,

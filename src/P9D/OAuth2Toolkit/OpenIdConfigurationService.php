@@ -24,14 +24,17 @@ class OpenIdConfigurationService
     private readonly OpenIdConfiguration $openIdConfiguration;
 
     public function __construct(
-        private string              $configurationEndpoint,
+        private OpenIdConfigurationProvider              $provider,
         private HttpClientInterface $httpClient,
-        private ?string             $clientId = null,
-        private ?string             $clientSecret = null,
+
     )
     {
     }
 
+    /**
+     * @throws OAuth2ToolkitException
+     * @throws MissingOpenIdParameterException
+     */
     public function getAuthorizationUrl(
         string  $responseType,
         string  $redirectUri,
@@ -40,13 +43,10 @@ class OpenIdConfigurationService
         ?string $state = null,
     ): string
     {
+        $this->fetchConfiguration();
 
-        $configuration = $this
-            ->httpClient
-            ->request('GET', $this->configurationEndpoint)
-            ->toArray();
-
-        $url = parse_url($configuration['authorization_endpoint']);
+        $endpoint = $this->provider->authorizationEndpoint ?? $this->openIdConfiguration->getAuthorizationEndpoint();
+        $url = parse_url($endpoint);
 
         OAuth2ToolkitAssert::isArray($url);
         OAuth2ToolkitAssert::keyExists($url, 'scheme');
@@ -57,7 +57,7 @@ class OpenIdConfigurationService
 
         parse_str($url['query'] ?? '', $queryArgs);
 
-        $queryArgs['client_id'] = $clientId ?? $this->clientId;
+        $queryArgs['client_id'] = $clientId ?? $this->provider->clientId;
         $queryArgs['response_type'] = $responseType;
         $queryArgs['redirect_uri'] = $redirectUri;
 
@@ -158,9 +158,9 @@ class OpenIdConfigurationService
     /**
      * @throws OAuth2ToolkitException
      */
-    public function fetchConfiguration(): void
+    private function fetchConfiguration(): void
     {
-        if ($this->configurationLoaded) {
+        if ($this->configurationLoaded || $this->provider->configurationEndpoint === null) {
             return;
         }
         try {
@@ -172,7 +172,7 @@ class OpenIdConfigurationService
              */
             $configuration = $this
                 ->httpClient
-                ->request('GET', $this->configurationEndpoint)
+                ->request('GET', $this->provider->configurationEndpoint)
                 ->toArray();
 
             $this->openIdConfiguration = new OpenIdConfiguration(
