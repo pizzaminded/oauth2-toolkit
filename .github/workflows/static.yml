@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  tests:
+  cs-fix-check:
     strategy:
       matrix:
         php_version:
