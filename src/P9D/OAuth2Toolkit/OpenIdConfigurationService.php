@@ -17,36 +17,46 @@ use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ * @phpstan-type Jwk array{
+ *            e: string,
+ *            alg: string,
+ *            kty: string,
+ *            use: string,
+ *            kid: string,
+ *            n: string
+ *        }
+ * @phpstan-type JwksEndpointResponse array{
+ *       keys: Jwk[]
+ *   }
+ */
 class OpenIdConfigurationService
 {
     private bool $configurationLoaded = false;
 
-    private readonly OpenIdConfiguration $openIdConfiguration;
+    private OpenIdConfiguration $openIdConfiguration;
 
     public function __construct(
-        private string              $configurationEndpoint,
+        private OpenIdConfigurationProvider $provider,
         private HttpClientInterface $httpClient,
-        private ?string             $clientId = null,
-        private ?string             $clientSecret = null,
-    )
-    {
+    ) {
     }
 
+    /**
+     * @throws OAuth2ToolkitException
+     * @throws MissingOpenIdParameterException
+     */
     public function getAuthorizationUrl(
-        string  $responseType,
-        string  $redirectUri,
+        string $responseType,
+        string $redirectUri,
         ?string $clientId = null,
         ?string $scope = null,
         ?string $state = null,
-    ): string
-    {
+    ): string {
+        $this->fetchConfiguration();
 
-        $configuration = $this
-            ->httpClient
-            ->request('GET', $this->configurationEndpoint)
-            ->toArray();
-
-        $url = parse_url($configuration['authorization_endpoint']);
+        $endpoint = $this->provider->authorizationEndpoint ?? $this->openIdConfiguration->getAuthorizationEndpoint();
+        $url = parse_url($endpoint);
 
         OAuth2ToolkitAssert::isArray($url);
         OAuth2ToolkitAssert::keyExists($url, 'scheme');
@@ -54,10 +64,9 @@ class OpenIdConfigurationService
         $urlScheme = $url['scheme'];
         $urlHost = $url['host'];
 
-
         parse_str($url['query'] ?? '', $queryArgs);
 
-        $queryArgs['client_id'] = $clientId ?? $this->clientId;
+        $queryArgs['client_id'] = $clientId ?? $this->provider->clientId;
         $queryArgs['response_type'] = $responseType;
         $queryArgs['redirect_uri'] = $redirectUri;
 
@@ -91,32 +100,31 @@ class OpenIdConfigurationService
      * @throws MissingOpenIdParameterException
      */
     public function getAccessToken(
-        string  $grantType,
+        string $grantType,
         ?string $code = null,
-    ): AccessToken
-    {
+    ): AccessToken {
         $this->fetchConfiguration();
 
         $body = [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'grant_type' => $grantType
+            'client_id' => $this->provider->clientId,
+            'client_secret' => $this->provider->clientSecret,
+            'grant_type' => $grantType,
         ];
 
         if ($code !== null) {
             $body['code'] = $code;
         }
 
-        /**
-         * @var array{
-         *     access_token: string,
-         *     token_type: string,
-         *     expires_in: ?int,
-         *     refresh_token: ?string,
-         *     scope: ?string
-         * } $tokenResponse
-         */
         try {
+            /**
+             * @var array{
+             *     access_token: non-empty-string,
+             *     token_type: non-empty-string,
+             *     expires_in: ?int,
+             *     refresh_token: ?string,
+             *     scope: ?string
+             * } $tokenResponse
+             */
             $tokenResponse = $this
                 ->httpClient
                 ->request(
@@ -128,51 +136,60 @@ class OpenIdConfigurationService
                 )
                 ->toArray();
         } catch (ClientException $e) {
+            /** @var string $message */
             $message = $e
                 ->getResponse()
                 ->toArray(false)['error_description'];
-            
-            throw new OAuth2ToolkitException(
-                sprintf(
-                    'Bad Request occured during fetching an access token: "%s"',
-                    $message
-                )
-            );
+
+            throw new OAuth2ToolkitException(sprintf('Bad Request occurred during fetching an access token: "%s"', $message));
         }
 
         return AccessToken::fromArray($tokenResponse);
     }
 
-
+    /**
+     * @phpstan-return JwksEndpointResponse
+     *
+     * @throws ClientExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws MissingOpenIdParameterException
+     * @throws OAuth2ToolkitException
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
     public function getJwks(): array
     {
         $this->fetchConfiguration();
 
-        return $this
+        /** @var JwksEndpointResponse $response */
+        $response = $this
             ->httpClient
-            ->request('GET', $this->openIdConfiguration->getJwksEndpoint())
+            ->request('GET', $this->provider->jwksEndpoint ?? $this->openIdConfiguration->getJwksEndpoint())
             ->toArray();
-        
+
+        return $response;
     }
-    
+
     /**
      * @throws OAuth2ToolkitException
      */
-    public function fetchConfiguration(): void
+    private function fetchConfiguration(): void
     {
-        if ($this->configurationLoaded) {
+        if ($this->configurationLoaded || $this->provider->configurationEndpoint === null) {
             return;
         }
         try {
             /**
              * @var array{
              *     authorization_endpoint: string,
-             *     token_endpoint: string
+             *     token_endpoint: string,
+             *     jwks_uri: non-empty-string
              * } $configuration
              */
             $configuration = $this
                 ->httpClient
-                ->request('GET', $this->configurationEndpoint)
+                ->request('GET', $this->provider->configurationEndpoint)
                 ->toArray();
 
             $this->openIdConfiguration = new OpenIdConfiguration(
@@ -183,14 +200,7 @@ class OpenIdConfigurationService
 
             $this->configurationLoaded = true;
         } catch (ExceptionInterface $e) {
-            throw new OAuth2ToolkitException(
-                sprintf(
-                    'Unable to fetch configuration from "%s": %s',
-                    $this->configurationEndpoint,
-                    $e->getMessage()
-                ),
-                previous: $e
-            );
+            throw new OAuth2ToolkitException(sprintf('Unable to fetch configuration from "%s": %s', $this->provider->configurationEndpoint, $e->getMessage()), previous: $e);
         }
     }
 }

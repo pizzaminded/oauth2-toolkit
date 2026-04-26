@@ -1,14 +1,18 @@
-name: Tests & Static analysis
+name: oauth2-toolkit tests
 
 on:
   push:
-    branches: ["main"]
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  phpunit:
+    strategy:
+      matrix:
+        php_version:
+          - 8.4
+          - 8.5
     runs-on: ubuntu-latest
 
     steps:
@@ -19,12 +23,43 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./vendor
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          key: composer-${{ runner.os }}-${{ matrix.php_version }}-${{ hashFiles('**/composer.lock') }}
 
-      - name: Install PHP 8.3
+      - name: Install PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
+          php-version: ${{ matrix.php_version }}
+          tools: composer:v2
+
+      - name: Vendors
+        run: composer install
+
+      - name: PHPUnit
+        run: |
+          ./vendor/bin/phpunit
+
+  static-analysis:
+    strategy:
+      matrix:
+        php_version:
+          - 8.4
+          - 8.5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./vendor
+          key: composer-${{ runner.os }}-${{ matrix.php_version }}-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php_version }}
           tools: composer:v2
 
       - name: Vendors
@@ -33,3 +68,33 @@ jobs:
       - name: PHPStan Analysis
         run: |
           ./vendor/bin/phpstan analyse
+
+  cs-fixer-check:
+    strategy:
+      matrix:
+        php_version:
+          - 8.5
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ./vendor
+          key: composer-${{ runner.os }}-${{ matrix.php_version }}-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php_version }}
+          tools: composer:v2
+
+      - name: Vendors
+        run: composer install
+
+      - name: PHP CS Fixer check
+        run: |
+          ./vendor/bin/php-cs-fixer check
