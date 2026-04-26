@@ -69,7 +69,7 @@ jobs:
         run: |
           ./vendor/bin/phpstan analyse
 
-  tests:
+  cs-fixer-check:
     strategy:
       matrix:
         php_version:
