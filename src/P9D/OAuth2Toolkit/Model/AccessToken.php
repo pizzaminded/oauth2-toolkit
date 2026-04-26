@@ -14,6 +14,16 @@ class AccessToken
     {
     }
 
+    /**
+     * @param array{
+     *     access_token: non-empty-string,
+     *     token_type: non-empty-string,
+     *     expires_in: ?int,
+     *     refresh_token: ?string,
+     *     scope: ?string
+     * } $data
+     * @return self
+     */
     public static function fromArray(
         array $data
     ): self

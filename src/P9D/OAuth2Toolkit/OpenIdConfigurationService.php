@@ -34,12 +34,11 @@ class OpenIdConfigurationService
 {
     private bool $configurationLoaded = false;
 
-    private readonly OpenIdConfiguration $openIdConfiguration;
+    private OpenIdConfiguration $openIdConfiguration;
 
     public function __construct(
-        private OpenIdConfigurationProvider              $provider,
-        private HttpClientInterface $httpClient,
-
+        private OpenIdConfigurationProvider $provider,
+        private HttpClientInterface         $httpClient,
     )
     {
     }
@@ -111,8 +110,8 @@ class OpenIdConfigurationService
         $this->fetchConfiguration();
 
         $body = [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
+            'client_id' => $this->provider->clientId,
+            'client_secret' => $this->provider->clientSecret,
             'grant_type' => $grantType
         ];
 
@@ -120,16 +119,16 @@ class OpenIdConfigurationService
             $body['code'] = $code;
         }
 
-        /**
-         * @var array{
-         *     access_token: string,
-         *     token_type: string,
-         *     expires_in: ?int,
-         *     refresh_token: ?string,
-         *     scope: ?string
-         * } $tokenResponse
-         */
         try {
+            /**
+             * @var array{
+             *     access_token: non-empty-string,
+             *     token_type: non-empty-string,
+             *     expires_in: ?int,
+             *     refresh_token: ?string,
+             *     scope: ?string
+             * } $tokenResponse
+             */
             $tokenResponse = $this
                 ->httpClient
                 ->request(
@@ -141,13 +140,14 @@ class OpenIdConfigurationService
                 )
                 ->toArray();
         } catch (ClientException $e) {
+            /** @var string $message */
             $message = $e
                 ->getResponse()
                 ->toArray(false)['error_description'];
-            
+
             throw new OAuth2ToolkitException(
                 sprintf(
-                    'Bad Request occured during fetching an access token: "%s"',
+                    'Bad Request occurred during fetching an access token: "%s"',
                     $message
                 )
             );
@@ -212,7 +212,7 @@ class OpenIdConfigurationService
             throw new OAuth2ToolkitException(
                 sprintf(
                     'Unable to fetch configuration from "%s": %s',
-                    $this->configurationEndpoint,
+                    $this->provider->configurationEndpoint,
                     $e->getMessage()
                 ),
                 previous: $e

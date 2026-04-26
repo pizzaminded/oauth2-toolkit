@@ -20,19 +20,7 @@ readonly class OpenIdConfigurationFactory
     public function createForProvider(string $providerName): OpenIdConfigurationService
     {
         return new OpenIdConfigurationService(
-            configurationEndpoint: $this->providers[$providerName]['configuration_endpoint'],
-            clientId: $this->providers[$providerName]['client_id'] ?? null,
-            clientSecret: $this->providers[$providerName]['client_secret'] ?? null,
-            httpClient: $this->httpClient
-        );
-    }
-
-    public function create(
-        string $configurationEndpoint
-    ): OpenIdConfigurationService
-    {
-        return new OpenIdConfigurationService(
-            $configurationEndpoint,
+            provider: $this->providers[$providerName],
             httpClient: $this->httpClient
         );
     }
