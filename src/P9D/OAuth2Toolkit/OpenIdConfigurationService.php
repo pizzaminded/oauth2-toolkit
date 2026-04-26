@@ -17,6 +17,19 @@ use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ * @phpstan-type Jwk array{
+ *            e: string,
+ *            alg: string,
+ *            kty: string,
+ *            use: string,
+ *            kid: string,
+ *            n: string
+ *        }
+ * @phpstan-type JwksEndpointResponse array{
+ *       keys: Jwk[]
+ *   }
+ */
 class OpenIdConfigurationService
 {
     private bool $configurationLoaded = false;
@@ -144,17 +157,29 @@ class OpenIdConfigurationService
     }
 
 
+    /**
+     * @phpstan-return JwksEndpointResponse
+     * @throws ClientExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws MissingOpenIdParameterException
+     * @throws OAuth2ToolkitException
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
     public function getJwks(): array
     {
         $this->fetchConfiguration();
 
-        return $this
+        /** @var JwksEndpointResponse $response */
+        $response = $this
             ->httpClient
-            ->request('GET', $this->openIdConfiguration->getJwksEndpoint())
+            ->request('GET', $this->provider->jwksEndpoint ?? $this->openIdConfiguration->getJwksEndpoint())
             ->toArray();
-        
+
+        return $response;
     }
-    
+
     /**
      * @throws OAuth2ToolkitException
      */
@@ -167,7 +192,8 @@ class OpenIdConfigurationService
             /**
              * @var array{
              *     authorization_endpoint: string,
-             *     token_endpoint: string
+             *     token_endpoint: string,
+             *     jwks_uri: non-empty-string
              * } $configuration
              */
             $configuration = $this
