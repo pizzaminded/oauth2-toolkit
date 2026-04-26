@@ -12,7 +12,7 @@ readonly class OpenIdConfigurationFactory
      * @param array<string, OpenIdConfigurationProvider> $providers
      */
     public function __construct(
-        private array               $providers,
+        private array $providers,
         private HttpClientInterface $httpClient
     ) {
     }

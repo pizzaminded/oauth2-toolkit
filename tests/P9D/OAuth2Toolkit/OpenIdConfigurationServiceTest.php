@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace P9D\OAuth2Toolkit;
 
 use PHPUnit\Framework\TestCase;

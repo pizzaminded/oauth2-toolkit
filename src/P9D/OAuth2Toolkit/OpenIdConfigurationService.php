@@ -38,9 +38,8 @@ class OpenIdConfigurationService
 
     public function __construct(
         private OpenIdConfigurationProvider $provider,
-        private HttpClientInterface         $httpClient,
-    )
-    {
+        private HttpClientInterface $httpClient,
+    ) {
     }
 
     /**
@@ -48,13 +47,12 @@ class OpenIdConfigurationService
      * @throws MissingOpenIdParameterException
      */
     public function getAuthorizationUrl(
-        string  $responseType,
-        string  $redirectUri,
+        string $responseType,
+        string $redirectUri,
         ?string $clientId = null,
         ?string $scope = null,
         ?string $state = null,
-    ): string
-    {
+    ): string {
         $this->fetchConfiguration();
 
         $endpoint = $this->provider->authorizationEndpoint ?? $this->openIdConfiguration->getAuthorizationEndpoint();
@@ -65,7 +63,6 @@ class OpenIdConfigurationService
         OAuth2ToolkitAssert::keyExists($url, 'host');
         $urlScheme = $url['scheme'];
         $urlHost = $url['host'];
-
 
         parse_str($url['query'] ?? '', $queryArgs);
 
@@ -103,16 +100,15 @@ class OpenIdConfigurationService
      * @throws MissingOpenIdParameterException
      */
     public function getAccessToken(
-        string  $grantType,
+        string $grantType,
         ?string $code = null,
-    ): AccessToken
-    {
+    ): AccessToken {
         $this->fetchConfiguration();
 
         $body = [
             'client_id' => $this->provider->clientId,
             'client_secret' => $this->provider->clientSecret,
-            'grant_type' => $grantType
+            'grant_type' => $grantType,
         ];
 
         if ($code !== null) {
@@ -145,20 +141,15 @@ class OpenIdConfigurationService
                 ->getResponse()
                 ->toArray(false)['error_description'];
 
-            throw new OAuth2ToolkitException(
-                sprintf(
-                    'Bad Request occurred during fetching an access token: "%s"',
-                    $message
-                )
-            );
+            throw new OAuth2ToolkitException(sprintf('Bad Request occurred during fetching an access token: "%s"', $message));
         }
 
         return AccessToken::fromArray($tokenResponse);
     }
 
-
     /**
      * @phpstan-return JwksEndpointResponse
+     *
      * @throws ClientExceptionInterface
      * @throws DecodingExceptionInterface
      * @throws MissingOpenIdParameterException
@@ -209,14 +200,7 @@ class OpenIdConfigurationService
 
             $this->configurationLoaded = true;
         } catch (ExceptionInterface $e) {
-            throw new OAuth2ToolkitException(
-                sprintf(
-                    'Unable to fetch configuration from "%s": %s',
-                    $this->provider->configurationEndpoint,
-                    $e->getMessage()
-                ),
-                previous: $e
-            );
+            throw new OAuth2ToolkitException(sprintf('Unable to fetch configuration from "%s": %s', $this->provider->configurationEndpoint, $e->getMessage()), previous: $e);
         }
     }
 }
