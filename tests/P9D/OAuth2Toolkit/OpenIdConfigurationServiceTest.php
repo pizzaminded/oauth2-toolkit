@@ -10,6 +10,34 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 class OpenIdConfigurationServiceTest extends TestCase
 {
+    public function testAccessTokenEndpointWillBeFetchedFromProviderIfNoConfigurationEndpointWasProvided(): void
+    {
+        $provider = new OpenIdConfigurationProvider(
+            'random',
+            'random',
+            authorizationEndpoint: 'http://example.com/authorize',
+            tokenEndpoint: 'http://example.com/token',
+        );
+
+        $service = new OpenIdConfigurationService(
+            $provider,
+            new MockHttpClient([
+                function (string $method, string $url) {
+                    self::assertSame('http://example.com/token', $url);
+
+                    return new MockResponse(
+                        json_encode([
+                            'access_token' => 'access_token',
+                            'token_type' => 'Bearer',
+                        ])
+                    );
+                },
+            ]),
+        );
+
+        $service->getAccessToken('client_credentials');
+    }
+
     public function testGetAuthorizationUrlWouldUseEndpointFromPropertyWhenConfigNotDefined(): void
     {
         $provider = new OpenIdConfigurationProvider(

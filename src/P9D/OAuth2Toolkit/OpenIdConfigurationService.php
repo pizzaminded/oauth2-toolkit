@@ -176,9 +176,21 @@ class OpenIdConfigurationService
      */
     private function fetchConfiguration(): void
     {
-        if ($this->configurationLoaded || $this->provider->configurationEndpoint === null) {
+        if ($this->configurationLoaded) {
             return;
         }
+
+        if ($this->provider->configurationEndpoint === null) {
+            $this->openIdConfiguration = new OpenIdConfiguration(
+                authorizationEndpoint: $this->provider->authorizationEndpoint,
+                tokenEndpoint: $this->provider->tokenEndpoint,
+                jwksEndpoint: $this->provider->jwksEndpoint,
+            );
+            $this->configurationLoaded = true;
+
+            return;
+        }
+
         try {
             /**
              * @var array{
